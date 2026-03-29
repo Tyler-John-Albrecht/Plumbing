@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Onboarding — Brechtland WaaS</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'ink':        '#111318',
+            'ink-soft':   '#374151',
+            'ink-muted':  '#6B7280',
+            'ink-faint':  '#9CA3AF',
+            'canvas':     '#FAFAFA',
+            'canvas-2':   '#F3F4F6',
+            'pb':         '#0066FF',
+            'pb-dark':    '#0052CC',
+            'border-col': '#E5E7EB',
+          },
+          fontFamily: {
+            serif: ['Instrument Serif', 'Georgia', 'serif'],
+            sans:  ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #FAFAFA;
+      color: #111318;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #FAFAFA; }
+    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+
+    /* Progress Bar */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: #0066FF; border-radius: 0 3px 3px 0;
+      transition: width 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+      z-index: 999;
+    }
+
+    /* Header */
+    #site-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+      background: rgba(250,250,250,0.88);
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      border-bottom: 1px solid rgba(229,231,235,0.7);
+      box-shadow: 0 4px 28px rgba(17,19,24,0.05);
+    }
+
+    /* Typography */
+    .t-display {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(2.25rem, 4.5vw, 3.75rem);
+      line-height: 1.06;
+      letter-spacing: -0.022em;
+      color: #111318;
+    }
+    .t-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #0066FF;
+    }
+    .t-body { font-size: 1.0625rem; font-weight: 300; line-height: 1.75; color: #6B7280; }
+
+    /* Section card */
+    .q-section {
+      background: #fff;
+      border: 1px solid #E5E7EB;
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 4px 32px rgba(17,19,24,0.05);
+      margin-bottom: 1.75rem;
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .q-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .section-header {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 2rem; padding-bottom: 1.25rem;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .section-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: rgba(0,102,255,0.07);
+      border: 1px solid rgba(0,102,255,0.14);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .section-num {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 0.875rem; color: #9CA3AF;
+    }
+
+    /* Form inputs */
+    .f-label {
+      display: block; margin-bottom: 0.45rem;
+      font-size: 0.8rem; font-weight: 500;
+      letter-spacing: 0.035em; color: #374151;
+    }
+    .f-label .req { color: #0066FF; margin-left: 2px; }
+    .f-input {
+      width: 100%; padding: 0.875rem 1.125rem;
+      border: 1.5px solid #E5E7EB; border-radius: 12px;
+      background: #fff; color: #111318;
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    .f-input:focus {
+      border-color: #0066FF;
+      box-shadow: 0 0 0 4px rgba(0,102,255,0.09);
+    }
+    .f-input::placeholder { color: #9CA3AF; }
+    textarea.f-input { resize: vertical; min-height: 90px; }
+    select.f-input {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.75rem; cursor: pointer;
+    }
+    .f-hint {
+      font-size: 0.75rem; color: #9CA3AF;
+      margin-top: 0.35rem; display: block;
+    }
+    .f-group { margin-bottom: 1.375rem; }
+    .f-group:last-child { margin-bottom: 0; }
+
+    /* Grid helpers */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+    @media (max-width: 640px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .q-section { padding: 1.75rem 1.25rem; }
+    }
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Checkbox / Radio pills */
+    .pill-group { display: flex; flex-wrap: wrap; gap: 0.625rem; margin-top: 0.5rem; }
+    .pill-label {
+      display: flex; align-items: center; gap: 0.45rem;
+      padding: 0.5rem 1rem;
+      border: 1.5px solid #E5E7EB; border-radius: 100px;
+      background: #FAFAFA; cursor: pointer;
+      font-size: 0.84rem; font-weight: 500; color: #374151;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .pill-label:hover { border-color: #0066FF; color: #0066FF; background: rgba(0,102,255,0.04); }
+    .pill-input { display: none; }
+    .pill-input:checked + .pill-label {
+      border-color: #0066FF; background: #0066FF; color: #fff;
+    }
+
+    /* Submit button */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.9375rem 2.25rem;
+      background: #0066FF; color: #fff;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9375rem; font-weight: 600; letter-spacing: 0.01em;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.25s, transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.25s;
+    }
+    .btn-primary:hover {
+      background: #0052CC;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(0,102,255,0.32);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Success screen */
+    #success-screen {
+      display: none;
+      text-align: center; padding: 5rem 2rem;
+    }
+    .success-icon {
+      width: 72px; height: 72px; margin: 0 auto 2rem;
+      background: rgba(0,102,255,0.08);
+      border: 1.5px solid rgba(0,102,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.375rem 0.875rem;
+      background: rgba(0,102,255,0.07);
+      border: 1px solid rgba(0,102,255,0.18);
+      border-radius: 100px;
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: #0066FF;
+    }
+    .s-div {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #E5E7EB 20%, #E5E7EB 80%, transparent);
+      margin: 0.25rem 0 2rem;
+    }
+
+    /* Sticky footer bar */
+    #sticky-footer {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 800;
+      background: rgba(250,250,250,0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(229,231,235,0.8);
+      padding: 1rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem;
+      box-shadow: 0 -4px 24px rgba(17,19,24,0.06);
+    }
+    .progress-steps {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.8rem; color: #6B7280; font-weight: 500;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #E5E7EB; transition: background 0.3s;
+    }
+    .step-dot.done { background: #0066FF; }
+  </style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div id="progress-bar" style="width:0%;"></div>
+
+<!-- Header -->
+<header id="site-header">
+  <div class="max-w-4xl mx-auto px-6" style="height:64px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <!-- Pipe icon -->
+      <div style="width:34px;height:34px;background:#0066FF;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9h13a5 5 0 0 1 0 10H3V9z"/><path d="M3 9V5h4v4"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:.8rem;font-weight:600;color:#111318;letter-spacing:.01em;">Brechtland WaaS</p>
+        <p style="font-size:.7rem;color:#9CA3AF;margin-top:1px;">Client Onboarding</p>
+      </div>
+    </div>
+    <span class="badge">Plumbing Intake</span>
+  </div>
+</header>
+
+<!-- Main -->
+<main style="padding-top: 100px; padding-bottom: 120px;">
+  <div class="max-w-4xl mx-auto px-6">
+
+    <!-- Hero block -->
+    <div id="q-hero" style="text-align:center;margin-bottom:3.5rem;opacity:0;transform:translateY(24px);">
+      <span class="t-label" style="display:block;margin-bottom:1rem;">Welcome</span>
+      <h1 class="t-display" style="margin-bottom:1.25rem;">
+        Let's build your<br><em>perfect website.</em>
+      </h1>
+      <p class="t-body" style="max-width:520px;margin:0 auto 1.75rem;">
+        Answer the questions below and we'll have everything needed to build and customize your site. Takes about 5–8 minutes.
+      </p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="font-size:.825rem;font-weight:500;color:#374151;">~5 min to complete</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="font-size:.825rem;font-weight:500;color:#374151;">8 sections</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="font-size:.825rem;font-weight:500;color:#374151;">Save time at launch</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="s-div"></div>
+
+    <form id="intake-form" novalidate>
+
+      <!-- ── SECTION 1: Business Identity ─────────────── -->
+      <div class="q-section" data-section="1">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 01</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Business Identity</h2>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="biz-name">Business Name <span class="req">*</span></label>
+            <input class="f-input" type="text" id="biz-name" name="biz_name" placeholder="e.g. ProFlow Plumbing" required />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="biz-tagline">Tagline / Slogan</label>
+            <input class="f-input" type="text" id="biz-tagline" name="biz_tagline" placeholder="e.g. Precision Engineering for the Modern Home" />
+            <span class="f-hint">Used in the hero section headline area.</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="biz-year">Year Established <span class="req">*</span></label>
+            <input class="f-input" type="number" id="biz-year" name="biz_year" placeholder="e.g. 2009" min="1900" max="2025" required />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="biz-license">Contractor License Number</label>
+            <input class="f-input" type="text" id="biz-license" name="biz_license" placeholder="e.g. CFC1431825" />
+            <span class="f-hint">Displayed in the footer for trust signals.</span>
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="biz-about">About Your Business <span class="req">*</span></label>
+          <textarea class="f-input" id="biz-about" name="biz_about" placeholder="Briefly describe your business — what you do, your values, what makes you different from competitors..." required></textarea>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: Contact & Location ────────────── -->
+      <div class="q-section" data-section="2">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 02</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Contact & Location</h2>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="phone-main">Main Phone Number <span class="req">*</span></label>
+            <input class="f-input" type="tel" id="phone-main" name="phone_main" placeholder="e.g. (813) 555-0100" required />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="phone-emergency">Emergency / After-Hours Line</label>
+            <input class="f-input" type="tel" id="phone-emergency" name="phone_emergency" placeholder="e.g. (813) 555-0199" />
+            <span class="f-hint">If different from main — used for the emergency dispatch card.</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="email-contact">Contact / Quote Email <span class="req">*</span></label>
+            <input class="f-input" type="email" id="email-contact" name="email_contact" placeholder="e.g. hello@yourcompany.com" required />
+            <span class="f-hint">Where quote form submissions will be sent.</span>
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="biz-address">Business Address</label>
+            <input class="f-input" type="text" id="biz-address" name="biz_address" placeholder="e.g. 123 Main St, Tampa, FL 33602" />
+            <span class="f-hint">Optional — only shown if you want it on the site.</span>
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Service Area Cities / Regions <span class="req">*</span></label>
+          <input class="f-input" type="text" id="service-areas" name="service_areas" placeholder="e.g. Tampa, Clearwater, St. Petersburg, New Port Richey" required />
+          <span class="f-hint">List all cities or counties you serve — shown on the coverage map section.</span>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: Services Offered ──────────────── -->
+      <div class="q-section" data-section="3">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 03</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Services Offered</h2>
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Which services do you offer? <span class="req">*</span></label>
+          <span class="f-hint" style="margin-bottom:.75rem;display:block;">Select all that apply — each becomes a service card on your site.</span>
+          <div class="pill-group">
+            <input type="checkbox" class="pill-input" id="svc-water-heater" name="services[]" value="Water Heaters" /><label class="pill-label" for="svc-water-heater">Water Heaters</label>
+            <input type="checkbox" class="pill-input" id="svc-drain" name="services[]" value="Drain Cleaning" /><label class="pill-label" for="svc-drain">Drain Cleaning</label>
+            <input type="checkbox" class="pill-input" id="svc-emergency" name="services[]" value="Emergency Dispatch" /><label class="pill-label" for="svc-emergency">Emergency Dispatch</label>
+            <input type="checkbox" class="pill-input" id="svc-leak" name="services[]" value="Leak Detection" /><label class="pill-label" for="svc-leak">Leak Detection</label>
+            <input type="checkbox" class="pill-input" id="svc-repiping" name="services[]" value="Repiping" /><label class="pill-label" for="svc-repiping">Repiping</label>
+            <input type="checkbox" class="pill-input" id="svc-fixtures" name="services[]" value="Fixture Installation" /><label class="pill-label" for="svc-fixtures">Fixture Installation</label>
+            <input type="checkbox" class="pill-input" id="svc-sewer" name="services[]" value="Sewer Line Repair" /><label class="pill-label" for="svc-sewer">Sewer Line Repair</label>
+            <input type="checkbox" class="pill-input" id="svc-video" name="services[]" value="Video Inspection" /><label class="pill-label" for="svc-video">Video Inspection</label>
+            <input type="checkbox" class="pill-input" id="svc-hydro" name="services[]" value="Hydro Jetting" /><label class="pill-label" for="svc-hydro">Hydro Jetting</label>
+            <input type="checkbox" class="pill-input" id="svc-bathroom" name="services[]" value="Bathroom Remodeling" /><label class="pill-label" for="svc-bathroom">Bathroom Remodeling</label>
+            <input type="checkbox" class="pill-input" id="svc-commercial" name="services[]" value="Commercial Plumbing" /><label class="pill-label" for="svc-commercial">Commercial Plumbing</label>
+          </div>
+        </div>
+
+        <div class="f-group" style="margin-top:1.5rem;">
+          <label class="f-label" for="services-other">Any other services not listed?</label>
+          <input class="f-input" type="text" id="services-other" name="services_other" placeholder="e.g. Gas line installation, backflow testing..." />
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="emergency-hours">Do you offer 24/7 emergency service? <span class="req">*</span></label>
+          <select class="f-input" id="emergency-hours" name="emergency_hours" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="24/7">Yes — 24/7, 365 days a year</option>
+            <option value="extended">Extended hours only (e.g. 6am–10pm)</option>
+            <option value="no">No emergency service offered</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: Pricing & Estimates ───────────── -->
+      <div class="q-section" data-section="4">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 04</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Pricing & Estimates</h2>
+          </div>
+        </div>
+        <span class="f-hint" style="display:block;margin-bottom:1.5rem;">Used to populate the Diagnostic Wizard pricing tool on your site.</span>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="price-water-heater">Water Heater — Starting Price</label>
+            <input class="f-input" type="text" id="price-water-heater" name="price_water_heater" placeholder="e.g. $289" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="price-drain">Drain Cleaning — Starting Price</label>
+            <input class="f-input" type="text" id="price-drain" name="price_drain" placeholder="e.g. $89" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="price-leak">Leak Detection — Starting Price</label>
+            <input class="f-input" type="text" id="price-leak" name="price_leak" placeholder="e.g. $149" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="price-repipe">Repiping — Starting Price</label>
+            <input class="f-input" type="text" id="price-repipe" name="price_repipe" placeholder="e.g. $1,200" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="price-sewer">Sewer Repair — Starting Price</label>
+            <input class="f-input" type="text" id="price-sewer" name="price_sewer" placeholder="e.g. $350" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="price-fixture">Fixture Install — Starting Price</label>
+            <input class="f-input" type="text" id="price-fixture" name="price_fixture" placeholder="e.g. $175" />
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="price-note">Any pricing notes to display?</label>
+          <input class="f-input" type="text" id="price-note" name="price_note" placeholder="e.g. Free estimates on all jobs over $500" />
+          <span class="f-hint">Appears as a trust note near pricing or the contact form.</span>
+        </div>
+      </div>
+
+      <!-- ── SECTION 5: Stats & Social Proof ──────────── -->
+      <div class="q-section" data-section="5">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 05</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Stats & Social Proof</h2>
+          </div>
+        </div>
+        <span class="f-hint" style="display:block;margin-bottom:1.5rem;">These power the animated stat counters and trust section on your site. Leave blank if unsure — we'll use reasonable defaults.</span>
+
+        <div class="grid-3">
+          <div class="f-group">
+            <label class="f-label" for="stat-jobs">Jobs Completed</label>
+            <input class="f-input" type="text" id="stat-jobs" name="stat_jobs" placeholder="e.g. 10,000+" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="stat-rating">Average Rating</label>
+            <input class="f-input" type="text" id="stat-rating" name="stat_rating" placeholder="e.g. 4.9" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="stat-reviews">Total Reviews</label>
+            <input class="f-input" type="text" id="stat-reviews" name="stat_reviews" placeholder="e.g. 834" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="stat-response">Avg. Response Time</label>
+            <input class="f-input" type="text" id="stat-response" name="stat_response" placeholder="e.g. 47 min" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="stat-years">Years in Business</label>
+            <input class="f-input" type="text" id="stat-years" name="stat_years" placeholder="e.g. 15+" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="stat-satisfaction">Satisfaction Rate</label>
+            <input class="f-input" type="text" id="stat-satisfaction" name="stat_satisfaction" placeholder="e.g. 99%" />
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Certifications & Badges to Display</label>
+          <div class="pill-group">
+            <input type="checkbox" class="pill-input" id="cert-licensed" name="certs[]" value="Licensed & Insured" /><label class="pill-label" for="cert-licensed">Licensed & Insured</label>
+            <input type="checkbox" class="pill-input" id="cert-bonded" name="certs[]" value="Bonded" /><label class="pill-label" for="cert-bonded">Bonded</label>
+            <input type="checkbox" class="pill-input" id="cert-bbb" name="certs[]" value="BBB Accredited" /><label class="pill-label" for="cert-bbb">BBB Accredited</label>
+            <input type="checkbox" class="pill-input" id="cert-angi" name="certs[]" value="Angi Certified" /><label class="pill-label" for="cert-angi">Angi Certified</label>
+            <input type="checkbox" class="pill-input" id="cert-google" name="certs[]" value="Google Guaranteed" /><label class="pill-label" for="cert-google">Google Guaranteed</label>
+            <input type="checkbox" class="pill-input" id="cert-phcc" name="certs[]" value="PHCC Member" /><label class="pill-label" for="cert-phcc">PHCC Member</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 6: Guarantee & Brand Voice ───────── -->
+      <div class="q-section" data-section="6">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 06</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Guarantee & Brand Voice</h2>
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="guarantee-name">What do you call your guarantee? <span class="req">*</span></label>
+          <input class="f-input" type="text" id="guarantee-name" name="guarantee_name" placeholder="e.g. The White-Glove Guarantee, The ProFlow Promise..." required />
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="guarantee-desc">Describe your guarantee in 1–2 sentences <span class="req">*</span></label>
+          <textarea class="f-input" id="guarantee-desc" name="guarantee_desc" placeholder="e.g. We don't just fix pipes — we respect your space. Our techs arrive in uniform, use floor runners, and leave your home cleaner than they found it." required></textarea>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Guarantee Bullet Points</label>
+          <span class="f-hint" style="display:block;margin-bottom:.75rem;">List up to 4 specific promises (one per line) shown in the guarantee section.</span>
+          <textarea class="f-input" id="guarantee-bullets" name="guarantee_bullets" placeholder="Pristine uniforms & ID verification&#10;Floor-protecting runners&#10;Leave it cleaner than we found it&#10;Upfront, transparent pricing" style="min-height:110px;"></textarea>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="brand-tone">Tone of voice for your site <span class="req">*</span></label>
+          <select class="f-input" id="brand-tone" name="brand_tone" required>
+            <option value="" disabled selected>Select the best fit</option>
+            <option value="premium">Premium & Professional (e.g. luxury feel, refined language)</option>
+            <option value="friendly">Friendly & Approachable (warm, community-focused)</option>
+            <option value="bold">Bold & Direct (confident, no-nonsense)</option>
+            <option value="technical">Technical & Expert-Focused (spec-heavy, credibility-first)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── SECTION 7: Google & Social Links ─────────── -->
+      <div class="q-section" data-section="7">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 07</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Links & Online Presence</h2>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="link-google">Google Business Profile URL</label>
+            <input class="f-input" type="url" id="link-google" name="link_google" placeholder="https://g.page/your-business" />
+            <span class="f-hint">Used for the "Leave Us a Review" CTA.</span>
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="link-facebook">Facebook Page URL</label>
+            <input class="f-input" type="url" id="link-facebook" name="link_facebook" placeholder="https://facebook.com/your-page" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="link-instagram">Instagram URL</label>
+            <input class="f-input" type="url" id="link-instagram" name="link_instagram" placeholder="https://instagram.com/your-handle" />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="link-yelp">Yelp Page URL</label>
+            <input class="f-input" type="url" id="link-yelp" name="link_yelp" placeholder="https://yelp.com/biz/your-business" />
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="existing-domain">Existing Domain Name (if any)</label>
+          <input class="f-input" type="text" id="existing-domain" name="existing_domain" placeholder="e.g. proflowplumbing.com" />
+          <span class="f-hint">Leave blank if you need a new domain — we'll help you choose one.</span>
+        </div>
+      </div>
+
+      <!-- ── SECTION 8: Final Details ──────────────────── -->
+      <div class="q-section" data-section="8">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <div>
+            <p class="section-num">Section 08</p>
+            <h2 style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#111318;line-height:1.2;">Final Details</h2>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label" for="owner-name">Your Name <span class="req">*</span></label>
+            <input class="f-input" type="text" id="owner-name" name="owner_name" placeholder="First & last name" required />
+          </div>
+          <div class="f-group">
+            <label class="f-label" for="owner-email">Your Email <span class="req">*</span></label>
+            <input class="f-input" type="email" id="owner-email" name="owner_email" placeholder="you@yourcompany.com" required />
+          </div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="color-pref">Color Preferences</label>
+          <input class="f-input" type="text" id="color-pref" name="color_pref" placeholder="e.g. Keep blue, or I prefer a green and grey palette..." />
+          <span class="f-hint">The template uses blue (#0066FF) by default. Note any changes here.</span>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="has-photos">Do you have photos to provide?</label>
+          <select class="f-input" id="has-photos" name="has_photos">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes-team">Yes — team/technician photos</option>
+            <option value="yes-work">Yes — job/work photos</option>
+            <option value="yes-both">Yes — both team and work photos</option>
+            <option value="no">No — please use stock photos</option>
+          </select>
+          <span class="f-hint">Real photos significantly boost conversions. Stock photos are fine as a starting point.</span>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="launch-timeline">Desired Launch Timeline</label>
+          <select class="f-input" id="launch-timeline" name="launch_timeline">
+            <option value="" disabled selected>Select an option</option>
+            <option value="asap">ASAP — as fast as possible</option>
+            <option value="2-weeks">Within 2 weeks</option>
+            <option value="1-month">Within 1 month</option>
+            <option value="flexible">Flexible</option>
+          </select>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label" for="extra-notes">Anything else we should know?</label>
+          <textarea class="f-input" id="extra-notes" name="extra_notes" placeholder="Competitors to reference, features you'd love, specific things you want to avoid..."></textarea>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div style="text-align:center;padding:1rem 0 2rem;">
+        <button type="submit" class="btn-primary" id="submit-btn" style="min-width:220px;">
+          Submit Questionnaire
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <p style="font-size:.78rem;color:#9CA3AF;margin-top:.875rem;">We'll review your answers and be in touch within 1 business day.</p>
+      </div>
+
+    </form>
+
+    <!-- Success Screen -->
+    <div id="success-screen">
+      <div class="success-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <span class="t-label" style="display:block;margin-bottom:.75rem;">Submitted</span>
+      <h2 style="font-family:'Instrument Serif',serif;font-size:clamp(1.75rem,4vw,2.75rem);color:#111318;margin-bottom:1rem;line-height:1.1;">
+        We've got everything<br><em>we need.</em>
+      </h2>
+      <p class="t-body" style="max-width:460px;margin:0 auto 2rem;">
+        Your responses have been received. We'll review them and reach out within 1 business day to confirm details and kick off your site build.
+      </p>
+      <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.25rem;background:rgba(0,102,255,0.06);border:1px solid rgba(0,102,255,0.15);border-radius:12px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style="font-size:.84rem;font-weight:500;color:#374151;">Expect a reply within 1 business day</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Sticky footer -->
+<div id="sticky-footer">
+  <div class="progress-steps">
+    <span id="step-counter" style="margin-right:.25rem;">0 of 8 complete</span>
+    <div style="display:flex;gap:5px;margin-left:.25rem;" id="step-dots"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:.5rem;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <span style="font-size:.75rem;color:#9CA3AF;">Responses are private</span>
+  </div>
+</div>
+
+<script>
+  /* ── Step dots ────────────────────────────────────── */
+  const dotsEl = document.getElementById('step-dots');
+  const counterEl = document.getElementById('step-counter');
+  const totalSections = 8;
+  for (let i = 0; i < totalSections; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot';
+    d.id = 'dot-' + (i + 1);
+    dotsEl.appendChild(d);
+  }
+
+  /* ── Scroll reveal ────────────────────────────────── */
+  const sections = document.querySelectorAll('.q-section');
+  const hero     = document.getElementById('q-hero');
+
+  function revealVisible() {
+    const vh = window.innerHeight;
+    sections.forEach(sec => {
+      const rect = sec.getBoundingClientRect();
+      if (rect.top < vh * 0.92) sec.classList.add('visible');
+    });
+  }
+  window.addEventListener('scroll', revealVisible, { passive: true });
+  revealVisible();
+
+  // Hero entrance
+  gsap.to('#q-hero', { opacity: 1, y: 0, duration: 0.85, ease: 'power3.out', delay: 0.18 });
+
+  /* ── Progress tracking ────────────────────────────── */
+  const progressBar = document.getElementById('progress-bar');
+  const requiredFields = document.querySelectorAll('[required]');
+
+  function updateProgress() {
+    // Section-level: check if any field in section has a value
+    let done = 0;
+    sections.forEach((sec, i) => {
+      const inputs = sec.querySelectorAll('input, select, textarea');
+      const filled = Array.from(inputs).some(el => {
+        if (el.type === 'checkbox') return el.checked;
+        return el.value.trim() !== '';
+      });
+      const dot = document.getElementById('dot-' + (i + 1));
+      if (filled) {
+        done++;
+        if (dot) dot.classList.add('done');
+      } else {
+        if (dot) dot.classList.remove('done');
+      }
+    });
+    counterEl.textContent = done + ' of ' + totalSections + ' complete';
+
+    // Progress bar: scroll-based
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = scrollable > 0 ? Math.min(100, (window.scrollY / scrollable) * 100) : 0;
+    progressBar.style.width = pct + '%';
+  }
+
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.addEventListener('input', updateProgress);
+    el.addEventListener('change', updateProgress);
+  });
+  window.addEventListener('scroll', updateProgress, { passive: true });
+
+  /* ── Form submit ──────────────────────────────────── */
+  document.getElementById('intake-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Basic required validation
+    let valid = true;
+    requiredFields.forEach(f => {
+      if (!f.value.trim()) {
+        valid = false;
+        f.style.borderColor = '#EF4444';
+        f.addEventListener('input', () => f.style.borderColor = '', { once: true });
+      }
+    });
+
+    if (!valid) {
+      const firstErr = document.querySelector('[required][style*="EF4444"]');
+      if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Submitting…`;
+
+    // Simulate submission (swap with Formspree/Firebase as needed)
+    setTimeout(() => {
+      document.getElementById('intake-form').style.display = 'none';
+      document.querySelector('[data-section]')?.closest('form')?.remove();
+
+      const success = document.getElementById('success-screen');
+      success.style.display = 'block';
+      document.getElementById('sticky-footer').style.display = 'none';
+      progressBar.style.width = '100%';
+
+      gsap.fromTo(success,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out' }
+      );
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 1200);
+  });
+</script>
+
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+</body>
+</html>
