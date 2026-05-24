@@ -99,19 +99,27 @@
     }
     .hero-bg {
       position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 90% 60% at 65% 35%, rgba(217,119,6,.09) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 80% at 20% 75%, rgba(37,99,235,.06) 0%, transparent 55%),
-        linear-gradient(170deg, var(--bg) 0%, #09101E 100%);
+      background: url('hero-bg.jpg') center 35% / cover no-repeat;
     }
+    /* Dark overlay — heavier left (text side), lighter right (image shows through) */
+    .hero-bg::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        105deg,
+        rgba(7,11,20,.95) 0%,
+        rgba(7,11,20,.85) 38%,
+        rgba(7,11,20,.58) 65%,
+        rgba(7,11,20,.32) 100%
+      );
+      z-index: 1;
+    }
+    /* Subtle bottom fade to blend into stats strip */
     .hero-bg::after {
       content: '';
       position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(30,42,66,.25) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(30,42,66,.25) 1px, transparent 1px);
-      background-size: 44px 44px;
-      mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 20%, transparent 100%);
+      background: linear-gradient(to bottom, transparent 60%, var(--bg) 100%);
+      z-index: 2;
     }
     .hero-inner {
       max-width: 1200px; margin: 0 auto;
